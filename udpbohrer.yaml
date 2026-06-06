@@ -1,0 +1,139 @@
+#Sample configuration file, use exactly the same file for Inside and Outside
+#Keep this structure intact - modify BUT DO NOT DELETE entries
+#Flows may be added or removed, at least one flow must be defined
+header:
+  #Must be set to "udpbohrer"
+  application: "udpbohrer"
+  #MInteger >= 1
+  configFileVersion: 1
+  #MInteger >= 1, must match the major version of udpbohrer
+  minApplicationMajorVersion: 1
+  #optional
+  description: "The UDP forwarder for my home network"
+#The whole file is used as secret for Inside and Outside
+#For this reason both files must be binaary identical
+#Minimum length of secret entry is 1 byte. This is enforced. Use you own secret!
+secret: |
+  Regenerate for your own use! Do not use this example secret!
+  Use block indentation to stretch over multiple lines.
+  The whole configuration file (including comments) is used as secret material.
+  Example:
+  dd if=/dev/random bs=1 count=128 |base64 -w 60
+  128+0 records in
+  128+0 records out
+  vVLiEEr6mwj/3GSgAoFXTnCTpbm/yPCYZXd79LDAHOBnwBkLENKJyyIUqN5z
+  c3T0HmNefJsn6q2YtORMTRm8A8ND1e+AROJGkoRWbAKha5InyE9uCGuCtRch
+  Arlkw7m3q7IusQNdGqt9StuWqtRNcw0F/+l13ioN1hI0yEnVXvc=
+  128 bytes copied, 0,000205989 s, 621 kB/s
+#Configuration for logging
+log:
+  #Mean time interval between logging entries
+  intervalSeconds: 0.1
+  #Up to limitBurst entries are logged in burst
+  limitBurst: 20
+  #Limits logging of HELO packets to time interval (bursts of 2)
+  #Set to 0 if you want to log all entries
+  limitHeloLoggingSeconds: 240.0
+funnel:
+  #The protocol between Inside and Outside - allowed is "udp4" or "udp6"
+  protocol: "udp6"
+  #The Outside host - Specify host name or IP address matching to protocol
+  outHost: ::1
+  #The port of the Outside host - must be available for listen
+  outPort: 9999
+  #The port of the Inside host - must be available for listen
+  inPort: 9998
+  # This is the payload MTU for the UDP packets sent out by the IN and OUT funnel.
+  # As a flow label is added to the UDP packet, the actual MTU for the forwarded protocol must be 2 byte lower
+  # (e.g. 1422bytes 2bytes flow label = 1420 bytes for the forwarded protocol)
+  # An overhead of 28 or 48 for UDP/IP headers is removed from the MTU during parameter processing (as these headers are removed and added by udpbohrer)
+  # Packets with size larger than the MTU will be truncated.
+  # Beware of encapsulatingIPV6 in IPV4. In this case the MTU of the forwarded protocol is even lower
+  # (e.g. 1422 bytes  -2 bytes flow label - (48 for IPV6 UDP header - 28 bytes for IPV4 UDP header) = 1400 bytes
+  # To be on the safe side: Simply add 100 byte overhead to the MTU of the forwarded protocol and use this as mtu: parameter
+  mtu: 1422
+  #Minimum and maximum Inside port for forwarding to local system, provide a sufficient range
+  poolMinInPortToHost: 2000
+  poolMaxInPortToHost: 2500
+  #Maximum number of flows (all IDs) which are currently allowed: Must be between 2 and 254
+  maxCurrentFlows: 254
+  #The repeat interval in seconds for HELO packets which are sent from Inside to Outside and replied from Outside to Inside
+  heloRepeatInterval: 15.0
+  #This is the expected HELO roundtrip time in seconds between Inside and Outside
+  #If this time is exceeded, HELO packets are sent out once around every heloRoundtripTime until an answer is received
+  heloRoundtripTime: 3.0
+  #This is the HELO timeout for Outside - Inside timeout is heloTimeout + 2.3*heloRepeatInterval
+  #Once the timeout has expired, udpbohrer terminates and has to be restarted (usually with init or systemd)
+  #Outside system restarts first to give the Inside system the possibility to retrigger running or fresh Outside
+  #Choose it to be longer than the timeout of the forwarded protocols
+  heloTimeout: 130.0
+  #System time may differ between Inside and Outside
+  #This is the tolerance in seconds for HELO packets beween Inside and Outside
+  maxControlTimeDifferenceSeconds: 60
+  #System time is used instead of sequence numbers - allow x seconds to stabilise
+  maxWaitForValidSystemTimeSeconds: 120
+  #Read Buffer size on ports for the Inside/Outside communication
+  #Smaller buffers are used to remote and local ports
+  portBufferSize: 50000
+  # HELO file, created and written by udpbohrer when a HELO message is received by Inside or Outside - OPTIONAL
+  heloFile: "/tmp/udpbohrer.helo"
+flows:
+  #The id for this flow, msu be unique and between 1 and 255
+  255:
+    #For you own use
+    name: "A simple UPDv4 flow"
+    #The protocol from the Inside to local system- must be "udp4" or "udp6"
+    inProtocol: "udp4"
+    #The protocol from the Inside to local system- must be "udp4" or "udp6"
+    #The protocol beween Inside and Outside may differ
+    outProtocol: "udp4"
+    #The  Outside port where the packets are received
+    outPort: 20000
+    #The local system - specify name or address according to protocol
+    inHost: 127.0.0.1
+    #The port of the local system
+    inPort: 8000
+    #The timeout in seconds for a two way exchange 
+    timeoutSeconds: 10.0
+    #The timeout for an answer of the local system to Inside and Outside - usually shorter
+    initTimeoutSeconds: 7.7
+  100:
+    name: "A simple UDPv6 flow"
+    inProtocol: "udp6"
+    outProtocol: "udp6"
+    outPort: 20001
+    inHost: ::1
+    inPort: 8001
+    timeoutSeconds: 10.0
+    initTimeoutSeconds: 6.0
+  101:
+    name: "A simple UDPv6/UDPv4 flow"
+    inProtocol: "udp4"
+    outProtocol: "udp6"
+    outPort: 20003
+    inHost: 127.0.0.1
+    inPort: 8003
+    timeoutSeconds: 10.0
+    initTimeoutSeconds: 5.0
+  102:
+    name: "A simple UDPv6/UDPv4 flow"
+    inProtocol: "udp6"
+    outProtocol: "udp4"
+    outPort: 20004
+    inHost: ::1
+    inPort: 8004
+    timeoutSeconds: 10.0
+    initTimeoutSeconds: 5.0
+  5:
+    name: "Another flow with UDP6"
+    inProtocol: "udp6"
+    outProtocol: "udp6"
+    outPort: 20005
+    inHost: ip6-localhost
+    inPort: 8005
+    timeoutSeconds: 20.0
+    initTimeoutSeconds: 3.0
+
+
+
+

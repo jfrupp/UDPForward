@@ -1,0 +1,79 @@
+#Sample configuration file, use exactly the same file for Inside and Outside
+#Keep this structure intact - modify BUT DO NOT DELETE entries
+#Flows may be added or removed, at least one flow must be defined
+header:
+  #Must be set to "tcpbohrer"
+  application: "tcpbohrer"
+  #MInteger >= 1
+  configFileVersion: 1
+  #MInteger >= 1, must match the major version of tcpbohrer
+  minApplicationMajorVersion: 1
+  #optional
+  description: "The TCP forwarder for my home network"
+#The whole file is used as secret for Inside and Outside
+#For this reason both files must be binaary identical
+#Minimum length of secret entry is 1 byte. This is enforced. Use you own secret!
+secret: |
+  Regenerate for your own use! Do not use this example secret!
+  Use block indentation to stretch over multiple lines.
+  The whole configuration file (including comments) is used as secret material.
+  Example:
+  dd if=/dev/random bs=1 count=128 |base64 -w 60
+  128+0 records in
+  128+0 records out
+  vVLiEEr6mwj/3GSgAoFXTnCTpbm/yPCYZXd79LDAHOBnwBkLENKJyyIUqN5z
+  c3T0HmNefJsn6q2YtORMTRm8A8ND1e+AROJGkoRWbAKha5InyE9uCGuCtRch
+  Arlkw7m3q7IusQNdGqt9StuWqtRNcw0F/+l13ioN1hI0yEnVXvc=
+  128 bytes copied, 0,000205989 s, 621 kB/s
+#Configuration for logging
+log:
+  #Mean time interval between logging entries
+  intervalSeconds: 0.1
+  #Up to limitBurst entries are logged in burst
+  limitBurst: 20
+  #Limits logging of HELO packets to time interval (bursts of 2)
+  #Set to 0 if you want to log all entries
+  limitHeloLoggingSeconds: 240.0
+funnel:
+  #The protocol between Inside and Outside - allowed is "tcp4" or "tcp6"
+  protocol: "tcp6"
+  #The Outside host - Specify host name or IP address matching to protocol
+  outHost: ::1
+  #The port of the Outside host - must be available for listen
+  outPort: 9999
+  #Maximum number of connections (all IDs) which are currently allowed: Must be between 2 and 254
+  maxCurrentConnections: 254
+  #The repeat interval in seconds for HELO packets which are sent from Inside to Outside and replied from Outside to Inside
+  heloRepeatInterval: 15.0
+  #This is the HELO timeout for Outside - Inside timeout is heloTimeout + 2.3*heloRepeatInterval
+  #Once the timeout has expired, tcpbohrer terminates and has to be restarted (usually with init or systemd)
+  #Outside system restarts first to give the Inside system the possibility to retrigger running or fresh Outside
+  #Choose it to be longer than the timeout of the forwarded protocols
+  heloTimeout: 130.0
+  #System time may differ between Inside and Outside
+  #This is the tolerance in seconds for HELO packets beween Inside and Outside
+  maxControlTimeDifferenceSeconds: 60
+  #System time is used instead of sequence numbers - allow x seconds to stabilise
+  maxWaitForValidSystemTimeSeconds: 120
+  #Read Buffer size on ports for the Inside/Outside communication
+  #Smaller buffers are used to remote and local ports
+  portBufferSize: 50000
+  #The timeout for an answer of the local system to Inside and Outside
+  connectTimeout: 7
+  # HELO file, created and written by tcpbohrer when a HELO message is received by Inside or Outside - OPTIONAL
+  heloFile: "/tmp/tcpbohrer.helo"
+flows:
+  20:
+    name: "Another flow with TCP6"
+    inProtocol: "tcp6"
+    outProtocol: "tcp6"
+    outPort: 20005
+    inHost: ::1
+    inPort: 8005
+    secondsTimeout: 20.0
+    connectTimeout: 3.0
+
+
+
+
+

@@ -1,0 +1,29 @@
+on: 
+  push:
+  workflow_dispatch:
+jobs:
+  build-and-unittest:
+    runs-on: docker_x64
+    container:
+      image: server.server:5000/golangbuilderrunner:latest
+    steps:
+      - name: checkout code
+        uses: actions/checkout@v4
+      - name: Build
+        run: bash ./scripts/build.sh
+      - name: Unittests
+        run: bash ./scripts/unittests.sh
+      - name: upload udpforward binary artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: udpbohrer
+          path: bin/udpbohrer
+ #     - name: upload testcode binary artifact
+ #       uses: actions/upload-artifact@v3
+ #       with:
+ #         name: testcode
+ #         path: bin/testcode
+      
+            
+        
+  

@@ -1,0 +1,24 @@
+[Unit]
+Description=Continously restart tcpbohrer Outside as a service - edit for your needs
+# Edit to your location of tcpbohrer excutable, parameter file, User
+# The parameter file should be readable only to the user running tcpbohrer 
+
+[Install]
+WantedBy=multi-user.target
+
+[Service]
+ExecStart=env GOMAXPROCS=5 /usr/local/bin/tcpbohrer Outside /etc/tcpbohrer.yaml
+ExecStop=killall tcpbohrer
+User=udpbohrer
+Grouo=udpbohrer
+# Keeps running in foreground until kill, outputs on stdout and stderr
+Type=simple
+SyslogIdentifier=tcpbohrer
+# In case of error or timeout, tcpbohrer terminates
+# Always restart for reliable operation 
+Restart=always
+StartLimitIntervalSec=1
+StartLimitBurst=100
+RestartSec=10
+
+

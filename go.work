@@ -1,0 +1,59 @@
+go 1.24.4
+
+use ./cmd/testcode
+
+use ./cmd/udpbohrer
+
+use ./cmd/stressudpbohrer
+
+use ./cmd/tcpbohrer
+
+use ./cmd/stresstcpbohrer
+
+use ./pkg/ratelimitedlogging
+
+use ./pkg/boolstorage
+
+use ./pkg/timehelper
+
+use ./pkg/connlimiter
+
+use ./pkg/controlpacker
+
+use ./pkg/ipaddresshelper
+
+use ./pkg/qtime
+
+use ./pkg/writehelo
+
+use ./app/udpbohrer
+
+use ./app/udpbohrer/udpmessage
+
+use ./app/udpbohrer/udpconnin2out
+
+use ./app/udpbohrer/udpconnout2in
+
+use ./app/udpbohrer/udpconnin2local
+
+use ./app/udpbohrer/udpconnmaplocal
+
+use ./app/udpbohrer/udpbohrerparameters
+
+use ./app/udpbohrer/udpconnout2remote
+
+use ./app/tcpbohrer/
+
+use ./app/tcpbohrer/tcpoutacceptor
+
+use ./app/tcpbohrer/tcpconnheloout2in
+
+use ./app/tcpbohrer/tcpdispatchout
+
+use ./app/tcpbohrer/tcpconnheloin2out
+
+use ./app/tcpbohrer/tcpparameters
+
+use ./app/tcpbohrer/tcpforwarddata
+
+use ./app/tcpbohrer/tcpdial

@@ -1,0 +1,21 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Debug TCP Outside",
+            "type": "go",
+            "request": "launch",
+            "mode": "debug",
+            "program": "${workspaceFolder}/cmd/tcpbohrer/main.go",
+            "args": ["outside", "${workspaceFolder}/tcpbohrer.yaml"]       
+        },
+        {
+            "name": "Debug TCP Inside",
+            "type": "go",
+            "request": "launch",
+            "mode": "debug",
+            "program": "${workspaceFolder}/cmd/tcpbohrer/main.go",
+            "args": ["inside", "${workspaceFolder}/tcpbohrer.yaml"]       
+        }
+    ]
+} 
