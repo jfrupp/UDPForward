@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"portknocktls"
 	"qtime"
 	"ratelimitedlogging"
 	"strings"
@@ -36,7 +37,7 @@ func main() {
 	if strings.ToLower(args[1]) == "inside" {
 		bIsInside = true
 	}
-	par, controlpack, err := tcpparameters.LoadConfiguration(args[2], VERSIONMAJOR)
+	par, controlpack, knock, err := tcpparameters.LoadConfiguration(args[2], VERSIONMAJOR)
 	if err != nil {
 		panic(fmt.Sprintf("tcpbohrer: Error in configuration file %s: %s, terminating!\nCheck for missing parameters!", args[2], err))
 	}
@@ -46,12 +47,14 @@ func main() {
 	}
 	log := ratelimitedlogging.NewRateLimitedLogger(par.Log.IntervalSeconds, par.Log.LimitBurst,
 		int32(par.Log.LimitHeloLoggingSeconds))
+
 	if bIsInside {
 		log.Log(fmt.Sprintf("Inside: Starting, Config Id is: %d\n", controlpack.ConfigID))
 		tcpconnheloin2out.RunInside(par, controlpack, log)
 	} else {
 		log.Log(fmt.Sprintf("Outside: Starting, Config Id is: %d\n", controlpack.ConfigID))
-		tcpconnheloout2in.RunOutside(par, controlpack, log)
+		go portknocktls.GoStartTLSPortKnock(&knock)
+		tcpconnheloout2in.RunOutside(par, controlpack, &knock, log)
 	}
 	for {
 		time.Sleep(3600)

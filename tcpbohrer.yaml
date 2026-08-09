@@ -62,6 +62,13 @@ funnel:
   connectTimeout: 7
   # HELO file, created and written by tcpbohrer when a HELO message is received by Inside or Outside - OPTIONAL
   heloFile: "/tmp/tcpbohrer.helo"
+portknock:
+  #Port of the TLS/HTTPS server for port knocking - must be available for listen
+  portknockport: 8888
+  #Key file of the TLS/HTTPS server - generate by yourself
+  portknockkey: "ssl-cert-snakeoil.key"
+  #Cert file of the key - generate by yourself
+  portknockcert: "ssl-cert-snakeoil.crt"
 flows:
   #The id for this flow, msu be unique and between 1 and 255
   255:
@@ -90,40 +97,74 @@ flows:
     inPort: 8001
     secondsTimeout: 10.0
   101:
-    name: "A simple TCPv6/TCPv4 flow"
+    name: "A simple TCPv4 flow"
     inProtocol: "tcp4"
-    outProtocol: "tcp6"
+    outProtocol: "tcp4"
     outPort: 20003
     inHost: 127.0.0.1
     inPort: 8003
     secondsTimeout: 10.0
   102:
-    name: "A simple TCPv6/TCPv4 flow"
+    name: "A simple TCPv6 flow"
     inProtocol: "tcp6"
-    outProtocol: "tcp4"
+    outProtocol: "tcp6"
     outPort: 20004
     inHost: ::1
     inPort: 8004
     secondsTimeout: 10.0
-  5:
-    name: "Another flow with TCP6"
+  6:
+    name: "Another flow with TCP6 - Knock"
     inProtocol: "tcp6"
     outProtocol: "tcp6"
-    outPort: 20005
+    outPort: 20015
     inHost: ::1
-    inPort: 8005
+    inPort: 8015
     secondsTimeout: 20.0
-  20:
-    name: "Another flow with TCP6"
+    # This is the port knock name for this flow - Only active 
+    # port knocks open the outside port for this particular flow from
+    # the same source address.
+    # If the remote system calls port knock from a IPV6 address, the
+    # flow must be opened from the same IPV6 address.
+    # Same for IPV4 -> port knock from IPV4, flow from IPV4
+    # Several flows may share the same port knock name.
+    # Port knock URLs may be called from several remote systems at once.
+    # Call the URL from the remote system to activate port knock and keep
+    # the window open for refresh - port knock close automatically without refresh!
+    # When using tools like curl, make sure that the URL is periodically retrieved
+    # to keep port knock active.
+    # Once a TCP connection is active, port knock is not required as long as the 
+    # connection stays active.
+    # If no port knock name is configured, the mechanism is not active and the TLS
+    # port knock server is not started.
+    # URL has the following format: 
+    # https://<outside-host>:<portknockport>/<portknockname>
+    # https://outside.example.com:8888/1234
+    portknockname: "1234"
+  21:
+    name: "Another flow with TCP6 - Knock"
     inProtocol: "tcp6"
     outProtocol: "tcp4"
-    outPort: 20005
+    outPort: 20016
     inHost: ::1
-    inPort: 8007
+    inPort: 8017
     secondsTimeout: 20.0
-    
-
-
-
+    portknockname: "5678"
+  31:
+    name: "TCP6 - SSH"
+    inProtocol: "tcp6"
+    outProtocol: "tcp4"
+    outPort: 20036
+    inHost: ::1
+    inPort: 40023
+    secondsTimeout: 20.0
+  32:
+    name: "TCP6 - SSH - Knock"
+    inProtocol: "tcp6"
+    outProtocol: "tcp4"
+    outPort: 20037
+    inHost: ::1
+    inPort: 40022
+    secondsTimeout: 20.0
+    portknockname: "5678"
 
 

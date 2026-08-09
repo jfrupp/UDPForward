@@ -26,6 +26,10 @@ use ./pkg/qtime
 
 use ./pkg/writehelo
 
+use ./pkg/manageportknock
+
+use ./pkg/portknocktls
+
 use ./app/udpbohrer
 
 use ./app/udpbohrer/udpmessage

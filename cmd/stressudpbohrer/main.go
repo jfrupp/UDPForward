@@ -508,37 +508,100 @@ func MixValidAndInvalidPacketsAndIDs(addrPort netip.AddrPort, injectPort int, in
 
 }
 
+func printUsage() {
+	fmt.Println("Usage: stressudpbohrer <config.yaml> <usual|reflector|invalid> [remotePort] [runs]")
+	fmt.Println("Examples:")
+	fmt.Println("  ./bin/stressudpbohrer udpbohrer.yaml usual 30000 300000")
+	fmt.Println("  ./bin/stressudpbohrer udpbohrer.yaml reflector 30000 20")
+	fmt.Println("  ./bin/stressudpbohrer udpbohrer.yaml invalid 3000 20")
+}
+
 func main() {
+	if len(os.Args) < 3 {
+		fmt.Println("Stresstest UDPBohrer")
+		printUsage()
+		os.Exit(1)
+	}
+
 	fmt.Println("Stresstest", time.Now())
-	par, _, _ := udpbohrerparameters.LoadConfiguration(os.Args[1], 2)
+	par, _, err := udpbohrerparameters.LoadConfiguration(os.Args[1], 2)
+	if err != nil {
+		fmt.Printf("Error loading config %s: %v\n", os.Args[1], err)
+		printUsage()
+		os.Exit(1)
+	}
 	fmt.Println(par)
 	count := &Counter{}
-	//TwoWayExchangeBetweenRemoteAndLocal(par, count)
-	if os.Args[2] == "usual" {
-		runs, _ := strconv.Atoi(os.Args[4])
+
+	switch os.Args[2] {
+	case "usual":
+		if len(os.Args) < 5 {
+			fmt.Println("Mode 'usual' requires: stressudpbohrer <config.yaml> usual <unusedPort> <runs>")
+			printUsage()
+			os.Exit(1)
+		}
+		runs, err := strconv.Atoi(os.Args[4])
+		if err != nil {
+			fmt.Printf("Invalid run count %q: %v\n", os.Args[4], err)
+			printUsage()
+			os.Exit(1)
+		}
 		SimpleTwoWayExchangeBetweenRemoteAndLocal(runs, 255, par, count)
 		TwoWayExchangesBetweenRemoteAndLocal(runs, par, count, 128)
 		TwoWayExchangesBetweenRemoteAndLocal(runs, par, count, 10)
 		TwoWayExchangesBetweenRemoteAndLocal(runs, par, count, 0)
 		TwoWayExchangesBetweenRemoteAndLocal(runs, par, count, par.Funnel.Mtu)
-	}
-	if os.Args[2] == "reflector" {
-		remotePort, _ := strconv.Atoi(os.Args[3])
-		runs, _ := strconv.Atoi(os.Args[4])
+	case "reflector":
+		if len(os.Args) < 5 {
+			fmt.Println("Mode 'reflector' requires: stressudpbohrer <config.yaml> reflector <remotePort> <runs>")
+			printUsage()
+			os.Exit(1)
+		}
+		remotePort, err := strconv.Atoi(os.Args[3])
+		if err != nil {
+			fmt.Printf("Invalid remote port %q: %v\n", os.Args[3], err)
+			printUsage()
+			os.Exit(1)
+		}
+		runs, err := strconv.Atoi(os.Args[4])
+		if err != nil {
+			fmt.Printf("Invalid run count %q: %v\n", os.Args[4], err)
+			printUsage()
+			os.Exit(1)
+		}
 		TwoWayExchangeViaReflector(runs, remotePort, 1400, par, count)
-	}
-	if os.Args[3] == "invalid" {
-		injectPort, _ := strconv.Atoi(os.Args[3])
+	case "invalid":
+		if len(os.Args) < 5 {
+			fmt.Println("Mode 'invalid' requires: stressudpbohrer <config.yaml> invalid <injectPort> <runs>")
+			printUsage()
+			os.Exit(1)
+		}
+		injectPort, err := strconv.Atoi(os.Args[3])
+		if err != nil {
+			fmt.Printf("Invalid inject port %q: %v\n", os.Args[3], err)
+			printUsage()
+			os.Exit(1)
+		}
+		_, err = strconv.Atoi(os.Args[4])
+		if err != nil {
+			fmt.Printf("Invalid run count %q: %v\n", os.Args[4], err)
+			printUsage()
+			os.Exit(1)
+		}
 		ipv46 := 4
 		if par.Funnel.Protocol == "udp6" {
 			ipv46 = 6
 		}
 		addr, _ := ipaddresshelper.CompileAddr(ipv46, par.Funnel.OutHost)
-		print("Run with invalid data to Outside")
+		fmt.Println("Run with invalid data to Outside")
 		addrPort := netip.AddrPortFrom(addr, uint16(par.Funnel.OutPort))
 		MixValidAndInvalidPacketsAndIDs(addrPort, injectPort, par.Funnel.Protocol)
-		print("Run with invalid data to Inside")
+		fmt.Println("Run with invalid data to Inside")
 		addrPort = netip.AddrPortFrom(addr, uint16(par.Funnel.InPort))
 		MixValidAndInvalidPacketsAndIDs(addrPort, injectPort, par.Funnel.Protocol)
+	default:
+		fmt.Printf("Unknown mode: %s\n", os.Args[2])
+		printUsage()
+		os.Exit(1)
 	}
 }

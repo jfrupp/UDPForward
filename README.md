@@ -11,11 +11,13 @@ Tcpbohrer and Udpbohrer are developed in Golang and tested on Linux. They can be
 
 The forwarded TCP connections or UDP datagrams are neither authenticated nor encrypted. Their integrity is not checked. This is done by the forwarded protocols. Use encrypted protocols like SSH, TLS, OpenVPN or Wireguard. Do not forward legacy protocols like Telnet or FTP.
 
+In addition Tcpbohrer provides an optional port knock mechanism which requires a periodic HTTPS port knock to forward a TCP connection.
 For further information take a look at the *doc/* folder and the examples *yaml* configuration files. Always use exactly the same configuration files on Inside and Outside.
 
 Use the provided *service* files to run from systemd. These files expect the *yaml* configuration files for tcpbohrer and udpbohrer to be in */etc*. Customise them before use.
 
 Use the watchog(8) Linux daemon to further enhance reliability.
+
 
 ## Use Case
 ![Illustration of Use Case](SampleSetup.png)

@@ -3,7 +3,10 @@ package tcpoutacceptor
 import (
 	"connlimiter"
 	"fmt"
+	//"fmt"
+	"manageportknock"
 	"net"
+	"net/netip"
 	"os"
 	"ratelimitedlogging"
 	"strconv"
@@ -17,8 +20,14 @@ type AcceptedConnection struct {
 }
 
 func GoAcceptOutside(id uint8, port int, prot string, cha chan AcceptedConnection,
-	cl *connlimiter.ConnLimiter, log *ratelimitedlogging.RateLimitedLogger) {
+	cl *connlimiter.ConnLimiter, name string, knock *manageportknock.ManagePortKnock,
+	log *ratelimitedlogging.RateLimitedLogger) {
 
+	bCheckKnock := false
+
+	if knock != nil && knock.CheckName(name) {
+		bCheckKnock = true
+	}
 	sAddr := ""
 	var tAddr net.TCPAddr
 	if prot == "tcp4" {
@@ -29,6 +38,7 @@ func GoAcceptOutside(id uint8, port int, prot string, cha chan AcceptedConnectio
 		tAddr.Port = port
 		prot = "tcp6"
 	}
+	//fmt.Print(name, bCheckKnock, prot, sAddr, "\n")
 	listener, err := net.ListenTCP(prot, &tAddr)
 	if err != nil {
 		log.Log(fmt.Sprintf("Outside: Cannot listen to %s/%s", prot, sAddr))
@@ -54,8 +64,17 @@ func GoAcceptOutside(id uint8, port int, prot string, cha chan AcceptedConnectio
 		var a AcceptedConnection
 		a.Id = id
 		a.TimeAccepted = time.Now().Unix()
+		remoteAddr := conn.RemoteAddr().(*net.TCPAddr)
+		remoteIP, validRemoteIP := netip.AddrFromSlice(remoteAddr.IP)
+		if bCheckKnock && (!validRemoteIP || !knock.Check(name, remoteIP)) {
+			conn.Close()
+			cl.ReleaseConn()
+			log.Log(fmt.Sprintf("Outside: Id %d, Knock missing for connection from %s, closed!", int(id),
+				remoteAddr.String()))
+			continue
+		}
 		log.Log(fmt.Sprintf("Outside: Id %d, Accepted connection from %s", int(id),
-			conn.RemoteAddr().String()))
+			remoteAddr.String()))
 		a.Id = id
 		a.TimeAccepted = time.Now().Unix()
 		a.Conn = conn

@@ -107,18 +107,18 @@ flows:
     timeoutSeconds: 10.0
     initTimeoutSeconds: 6.0
   101:
-    name: "A simple UDPv6/UDPv4 flow"
+    name: "A simple UDPv4 flow"
     inProtocol: "udp4"
-    outProtocol: "udp6"
+    outProtocol: "udp4"
     outPort: 20003
     inHost: 127.0.0.1
     inPort: 8003
     timeoutSeconds: 10.0
     initTimeoutSeconds: 5.0
   102:
-    name: "A simple UDPv6/UDPv4 flow"
+    name: "A simple UDPv6 flow"
     inProtocol: "udp6"
-    outProtocol: "udp4"
+    outProtocol: "udp6"
     outPort: 20004
     inHost: ::1
     inPort: 8004

@@ -3,6 +3,7 @@ package tcpconnheloout2in
 import (
 	"connlimiter"
 	"controlpacker"
+	"manageportknock"
 	"net"
 	"os"
 	"ratelimitedlogging"
@@ -15,7 +16,7 @@ import (
 )
 
 func RunOutside(par *tcpparameters.TcpbohrerConfig, cp *controlpacker.ControlPacker,
-	log *ratelimitedlogging.RateLimitedLogger) {
+	knock *manageportknock.ManagePortKnock, log *ratelimitedlogging.RateLimitedLogger) {
 
 	ach := make(chan tcpoutacceptor.AcceptedConnection, 128)
 	var cl connlimiter.ConnLimiter
@@ -23,7 +24,7 @@ func RunOutside(par *tcpparameters.TcpbohrerConfig, cp *controlpacker.ControlPac
 
 	for id, flow := range par.Flows {
 		go tcpoutacceptor.GoAcceptOutside(uint8(id), flow.OutPort,
-			flow.OutProtocol, ach, &cl, log)
+			flow.OutProtocol, ach, &cl, flow.PortKnockName, knock, log)
 	}
 	prot := par.Funnel.Protocol
 	port := par.Funnel.OutPort

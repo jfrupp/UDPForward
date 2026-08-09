@@ -41,6 +41,21 @@ The sequence is as follows:
 
 Malformatted messages on the control connection trigger immediate exit of Inside and Outside. The timeouts / keep alives for control and data connections must keep the connections open despite the presence of NAT systems or firewalls.
 
+## Port knock protection
+Tcpbohrer can optionally add a pre-connection gate by running a dedicated HTTPS listener for port knocking. This listener is configured globally under `portknock` and then attached to individual flows by setting `portknockname` in the flow definition. The HTTPS endpoint is not a general authentication system: it is a mechanism to temporarily allow a source IP address to open a specific flow.
+
+The operational model is:
+1. The port-knock server listens on the configured TLS port.
+2. A valid URL such as `https://outside.example.com:8888/1234` is fetched from the remote host.
+3. The server checks whether the requested name is configured for one or more flows.
+4. The remote source IP address is stored together with the port-knock name and a timeout.
+5. The Outside system validates the source IP during a later inbound connection attempt and only accepts the flow if the knock is still valid.
+6. IPV4 and IPV6 addresses are treated separately.
+
+The implementation accepts only HTTPS requests that match a configured port-knock name, and it stores the state keyed by the IP address of the peer. A knock is therefore bound to the source address from which it was performed. This is useful when the remote host is behind a stable public IP, but it is not a replacement for strong user authentication. If a malicious party can reach the same public IP or a shared NAT address, the same knock will appear valid. The port-knock timeout is intentionally short and should be refreshed periodically by repeatedly requesting the URL while the remote system is trying to connect.
+
+The port-knock listener enforces TLS 1.2 or newer and requires a valid certificate and key. It is intended as an access gate for flow activation, not as confidentiality or endpoint authentication for the forwarded TCP data stream itself. The forwarded protocol still has to provide confidentiality and integrity.
+
 ## Cryptography
 See security of udpbohrer.
 

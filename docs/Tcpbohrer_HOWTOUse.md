@@ -38,4 +38,45 @@ Time between both systems must be roughly synchronized. If the Outside system is
 
 Both processes will not detach from the terminal. In case of error they exit. Use the provided configuration files to start tcpbohrer from systemd and enforce restart in case of exit. 
 
+### Port knock
+Port knocking is optional and is configured globally in the `portknock` section, with an optional `portknockname` on each flow. The `portknock` block defines a TLS/HTTPS listener on a dedicated port, for example:
+
+- `portknockport`: the HTTPS port used for port knocking
+- `portknockkey`: private key for TLS
+- `portknockcert`: certificate for TLS
+
+A flow becomes reachable only after the remote client accesses the matching URL from the same source IP address. The pattern is:
+
+`https://<outside-host>:<portknockport>/<portknockname>`
+
+Example:
+
+`https://outside.example.com:8888/1234`
+
+The HTTP path must match the flow's `portknockname` exactly. Several flows may share the same knock name; in that case a successful knock from the same source address unlocks all matching flows. The port-knock state expires automatically after the configured timeout and must be refreshed by repeatedly loading the URL to keep the knock alive. Once a TCP data connection is already established, the port-knock is no longer required for that connection as long as it remains active.
+
+The port-knock listener is started automatically by tcpbohrer when the `portknock` section is configured and at least one port knock name is configured in a flow. Without a port knock name in a flow, the TLS
+port knock server will not start. 
+
+Use a port knock TLS key and certificate only on the outside system and do not share it with other services. This protects the integrity of the
+actual services which use separate certificates.  
+
+IPV4 and IPV6 addresses must be treated separately. A port knock from an IPV4 address does not open a port for an IPV6 source address.
+
+When using a web browser to trigger port knocking, keep the window or tab open for automatic refresh. The port will close when no further refreshes happen. When using tools like **curl** make sure that periodic refreshes happens.
+
 **Set static routes between router, the system running tcpbohrer and the local servers!**
+
+### TLS key generation for Port knock
+``
+openssl req -new \
+            -x509 \
+            -newkey ec -pkeyopt ec_paramgen_curve:prime256v1 \
+            -sha256 \
+            -days 3650 \
+            -noenc \
+            -out ssl-cert-snakeoil.crt \
+            -keyout ssl-cert-snakeoil.key
+```
+Only use this key/certificate key pair for port knock. Tell users
+of the remote system to accept it for port knocking on the outside system.
