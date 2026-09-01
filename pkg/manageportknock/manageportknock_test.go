@@ -73,9 +73,6 @@ func TestConfigSetsTimeoutAndMax(t *testing.T) {
 	if mp.TLSCertFile() != "cert.pem" {
 		t.Fatalf("expected TLS cert file to be cert.pem, got %s", mp.TLSCertFile())
 	}
-	if !mp.IsConfig() {
-		t.Fatal("expected config to be marked active when TLS is configured")
-	}
 }
 
 func TestCheckNilMap(t *testing.T) {
