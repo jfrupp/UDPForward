@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net"
 	"os"
+	"portknocktls"
 	"strconv"
 	"sync"
 	"tcpdial"
@@ -151,7 +152,7 @@ func go_exchange(id int, runs int, par *tcpparameters.TcpbohrerConfig, count *Co
 	for i := 0; i < runs; i++ {
 
 		fmt.Printf("Id %d, Packet Size: %d, Run %d/%d\n", id, size, i, runs)
-		conn, err := tcpdial.DialToOutsideOrLocal(uint8(id), par, nil, true)
+		conn, err := tcpdial.DialToOutsideOrLocal(uint8(id), par, nil, false)
 		if err != nil || conn == nil {
 			count.IncrGoFailed(1)
 			continue
@@ -205,18 +206,40 @@ func TwoWayExchanges(runs int, par *tcpparameters.TcpbohrerConfig, count *Counte
 	}
 }
 
+func runStressMode(mode string, runs int, par *tcpparameters.TcpbohrerConfig, count *Counter) {
+	fmt.Printf("Running %s mode with %d runs\n", mode, runs)
+	if mode == "usual" || mode == "all" {
+		SimpleTwoWayExchange(runs, par, count)
+		TwoWayExchanges(runs, par, count, 10)
+		TwoWayExchanges(runs, par, count, 0)
+		TwoWayExchanges(runs, par, count, 1024)
+	}
+	if mode == "knock" || mode == "all" {
+		// Port-knock mode shares the same traffic pattern but keeps the TLS knock listener active.
+		SimpleTwoWayExchange(runs, par, count)
+		TwoWayExchanges(runs, par, count, 10)
+		TwoWayExchanges(runs, par, count, 0)
+		TwoWayExchanges(runs, par, count, 1024)
+	}
+}
+
 func main() {
 	fmt.Println("Stresstest TCPBohrer", time.Now())
 	if len(os.Args) < 3 {
 		fmt.Println("Usage: stresstcpbohrer <config.yaml> <mode> [runs]")
 		os.Exit(1)
 	}
-	par, _, err := tcpparameters.LoadConfiguration(os.Args[1], 1)
+	par, _, knock, err := tcpparameters.LoadConfiguration(os.Args[1], 1)
 	if err != nil {
 		panic(fmt.Sprintf("Error loading config: %s", err))
 	}
 	fmt.Println(par)
 	count := &Counter{}
+
+	if knock.IsConfigAndContainsKnocks() {
+		go portknocktls.GoStartTLSPortKnock(&knock)
+		fmt.Println("Port-knock TLS listener started")
+	}
 
 	// Start local reflectors
 	for id := range par.Flows {
@@ -224,15 +247,22 @@ func main() {
 	}
 	time.Sleep(1 * time.Second) // Wait for reflectors to start
 
-	if os.Args[2] == "usual" {
-		runs := 100
-		if len(os.Args) > 3 {
-			runs, _ = strconv.Atoi(os.Args[3])
-		}
-		SimpleTwoWayExchange(runs, par, count)
-		TwoWayExchanges(runs, par, count, 10)
-		TwoWayExchanges(runs, par, count, 0)
-		TwoWayExchanges(runs, par, count, 1024)
+	runs := 100
+	if len(os.Args) > 3 {
+		runs, _ = strconv.Atoi(os.Args[3])
+	}
+
+	switch os.Args[2] {
+	case "usual":
+		runStressMode("usual", runs, par, count)
+	case "knock":
+		runStressMode("knock", runs, par, count)
+	case "all":
+		runStressMode("all", runs, par, count)
+	default:
+		fmt.Printf("Unknown mode: %s\n", os.Args[2])
+		fmt.Println("Usage: stresstcpbohrer <config.yaml> <usual|knock|all> [runs]")
+		os.Exit(1)
 	}
 	fmt.Printf("Connections Initiated: %d\n", count.ConnectionsInitiated)
 	fmt.Printf("Connections Acknowledged: %d\n", count.ConnectionsAcknowledged)
